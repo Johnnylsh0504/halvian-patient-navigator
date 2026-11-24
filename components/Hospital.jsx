@@ -46,11 +46,11 @@ const workspaceContent = {
   discharge: {
     icon: ClipboardCheck,
     label: ["Discharge", "Alta", "出院审核"],
-    title: ["Discharge language review", "Revisión del alta", "出院语言审核"],
+    title: ["Discharge notes", "Notas de alta", "出院记录"],
     description: [
-      "Compare the language draft with the signed source before release.",
-      "Compara el borrador con la fuente firmada antes de publicarlo.",
-      "发布前将语言草稿与已签署原文进行核对。",
+      "Write and sign a note for the patient to read and download.",
+      "Escribe y firma una nota para que el paciente pueda leerla y descargarla.",
+      "填写并签署出院记录，供患者阅读和下载。",
     ],
   },
   requests: {

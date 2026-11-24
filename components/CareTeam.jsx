@@ -8,11 +8,9 @@ import {
   Check,
   ChevronRight,
   ClipboardCheck,
-  FilePenLine,
   Headphones,
   Route,
   ShieldCheck,
-  Sparkles,
   Activity,
   Clock3,
   UserCheck,
@@ -24,7 +22,6 @@ import { useCare } from "./CareContext.jsx";
 import {
   languages,
   issues,
-  planRows,
   visit,
   slots,
   prettyDate,
@@ -39,7 +36,7 @@ import {
   outreach,
   within14,
 } from "../lib/model.js";
-import { draftPlan } from "../lib/discharge.js";
+import { HospitalDischarge } from "./HospitalDischarge.jsx";
 
 const elapsed = (start, end) =>
   start && end ? Math.max(0, Math.round((end - start) / 60000)) : null;
@@ -255,132 +252,6 @@ function FlowDesk() {
         )}
       </section>
     </>
-  );
-}
-function Review() {
-  const { s, t, action } = useCare(),
-    [rows, setRows] = useState(null),
-    [checked, setChecked] = useState(false),
-    [error, setError] = useState("");
-  const release = s.releases[s.lang];
-  return (
-    <section className="card pad">
-      <div className="sectioncap">
-        <div className="symbol">
-          <FilePenLine size={20} />
-        </div>
-        <h2>{t("Discharge review", "Revisión de alta", "审核出院说明")}</h2>
-      </div>
-      <p className="small">
-        {t("Discharging clinician", "Profesional de alta", "出院医护人员")} ·{" "}
-        {visit.clinician} · {languages[s.lang]}
-      </p>
-      {release ? (
-        <>
-          <div className="callout good">
-            <ShieldCheck size={18} />
-            {t(
-              "This language version is approved and visible to the patient.",
-              "Esta versión está aprobada y visible para el paciente.",
-              "该语言版本已审核，患者现在可以查看。",
-            )}
-          </div>
-          <p className="small">
-            {t(
-              "The approved version is now available in the separate patient experience.",
-              "La versión aprobada ya está disponible en la experiencia separada del paciente.",
-              "已审核版本现已在独立患者端提供。",
-            )}
-          </p>
-        </>
-      ) : (
-        <>
-          <details className="source" open={rows ? true : undefined}>
-            <summary>
-              {t(
-                "Signed source note",
-                "Nota original firmada",
-                "已签署的原始记录",
-              )}{" "}
-              · v1
-            </summary>
-            <ul lang="en">
-              {visit.source.map((v) => (
-                <li key={v}>{v}</li>
-              ))}
-            </ul>
-          </details>
-          {!rows ? (
-            <button
-              className="primary"
-              onClick={() => {
-                const draft = draftPlan(visit.source, s.lang);
-                setRows(draft);
-                if (!draft)
-                  setError(
-                    t(
-                      "Source needs manual review.",
-                      "La fuente requiere revisión manual.",
-                      "原始记录需人工审核。",
-                    ),
-                  );
-              }}
-            >
-              <Sparkles size={16} />
-              {t(
-                "Prepare language draft",
-                "Preparar borrador",
-                "生成本语言草稿",
-              )}
-            </button>
-          ) : (
-            <>
-              <div className="draftfields">
-                {rows.map((row, i) => (
-                  <label key={i}>
-                    <span>{t(...planRows[i])}</span>
-                    <textarea
-                      rows={2}
-                      maxLength={320}
-                      value={row}
-                      onChange={(e) => {
-                        setRows(
-                          rows.map((v, j) => (j === i ? e.target.value : v)),
-                        );
-                        setChecked(false);
-                      }}
-                    />
-                  </label>
-                ))}
-              </div>
-              <label className="checkrow">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(e) => setChecked(e.target.checked)}
-                />
-                <span>
-                  {t(
-                    "I reviewed the wording and translation against the signed source.",
-                    "Revisé el texto y la traducción con la nota firmada.",
-                    "我已对照签署的原文核实措辞和翻译。",
-                  )}
-                </span>
-              </label>
-              <button
-                className="primary"
-                disabled={!checked || rows.some((v) => !v.trim())}
-                onClick={() => action({ type: "release", rows, checked })}
-              >
-                <ShieldCheck size={16} />
-                {t("Approve and release", "Aprobar y publicar", "审核并发布")}
-              </button>
-            </>
-          )}
-          {error && <p role="alert">{error}</p>}
-        </>
-      )}
-    </section>
   );
 }
 function Ticket({ q }) {
@@ -826,7 +697,7 @@ function Equity() {
 }
 export function CareTeam({ view = "intake" }) {
   if (view === "flow") return <FlowDesk />;
-  if (view === "discharge") return <Review />;
+  if (view === "discharge") return <HospitalDischarge />;
   if (view === "requests") return <Queue />;
   if (view === "outcomes")
     return (

@@ -534,6 +534,39 @@ svg {
 .field textarea {
   resize: vertical;
 }
+.discharge-patient {
+  margin: 16px 0;
+}
+.discharge-form {
+  display: grid;
+  gap: 14px;
+}
+.discharge-form > button {
+  justify-self: start;
+}
+.discharge-form .small {
+  margin: 0;
+}
+.discharge-note-body {
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+  padding: 16px 0;
+  border-block: 1px solid var(--line);
+}
+a.discharge-download {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+}
+.discharge-guide {
+  margin-top: 18px;
+}
+@media print {
+  .discharge-download { display: none !important; }
+}
 .field input[type="range"] {
   width: 100%;
   accent-color: var(--teal);

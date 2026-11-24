@@ -77,9 +77,9 @@ const heroText = {
   discharge: [
     ["Your discharge guide", "Tu guía de alta", "你的出院指南"],
     [
-      "Read or listen to the instructions your care team has reviewed.",
-      "Lee o escucha las instrucciones revisadas por tu equipo.",
-      "阅读或收听由医护团队审核的出院说明。",
+      "Read and download the discharge note your care team signs for this visit.",
+      "Lee y descarga la nota de alta que tu equipo firma para esta visita.",
+      "阅读并下载医护团队为本次就诊签署的出院记录。",
     ],
   ],
   "follow-up": [

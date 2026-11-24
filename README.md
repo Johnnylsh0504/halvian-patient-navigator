@@ -23,7 +23,7 @@ Open http://localhost:3000. Stop the server with Ctrl+C.
 | /patient/symptoms/ | 2 · Symptom intake | Describe symptoms by text or voice and optionally select a photo with consent. |
 | /patient/wait/ | 3 · Wait updates | See the current stage and estimate, request help or report worsening symptoms. |
 | /patient/assistant/ | 4 · Assistant | Ask in English, Spanish or Chinese; clinical and uncertain questions enter the hospital queue. |
-| /patient/discharge/ | 5 · Discharge | Read, listen to or print only the language version released by the clinician. |
+| /patient/discharge/ | 5 · Discharge | Read the signed original and download it as UTF-8 text. A separately reviewed guide is available in its released language. |
 | /patient/follow-up/ | 6 · Follow-up | Book a clinic slot, choose a reminder and report access barriers. |
 
 ### Hospital-facing routes
@@ -32,7 +32,7 @@ Open http://localhost:3000. Stop the server with Ctrl+C.
 | --- | --- | --- |
 | /hospital/intake/ | Registration and triage | Review the registration queue, open and verify a patient record, download verified insurance information and review submitted symptom reports. |
 | /hospital/flow/ | ED flow | Monitor a live queue that recalculates from active registrations, warning signals, reported severity and arrival order. |
-| /hospital/discharge/ | Discharge review | Prepare, edit, attest to and release each language version. |
+| /hospital/discharge/ | Discharge notes | Select a verified visit, enter a note as its nurse or attending physician, then sign and release it. |
 | /hospital/requests/ | Requests | Respond to clinical questions, access barriers and clarification requests. |
 | /hospital/outcomes/ | Outcomes | Verify attendance and review workflow, communication and equity measures. |
 
@@ -56,7 +56,7 @@ The root route opens patient check-in. Patient and hospital experiences have com
 | Symptom intake | Text, optional browser dictation, severity, onset, caregiver reporting and optional photo consent are preserved with a deterministic structured summary. Warning terms prompt immediate staff notification without assigning a diagnosis or acuity. | An ED nurse owns triage and reviews the original words. |
 | Wait updates | The ED queue automatically orders active patients using warning signals, reported severity and arrival time, then calculates queue position and estimated wait from the workload ahead. Patients can request waiting-area help or alert a nurse that symptoms worsened. | Trained clinical staff retain responsibility for formal triage and immediate intervention. |
 | Multilingual assistant | A local nearest-example intent classifier retrieves a reviewed answer. It checks clinical terms first, abstains on unfamiliar vocabulary and ambiguous matches, and preserves the original query in the worklist. Four administrative topics have English, Spanish and Chinese examples. Feedback creates a trackable request. | ED nurse owns clinical and uncertain questions. |
-| Discharge | Controlled example-based translation maps the signed source clauses to reviewed language templates, preserving the emergency number, clinic and follow-up interval. Uncovered source content blocks draft generation. The patient only sees the reviewed language version. The reviewer can edit it, and an edit clears the approval attestation. | Discharging clinician owns the final wording and release for each language. |
+| Discharge | A verified visit starts with a blank clinician editor. Signing publishes the exact text to that visit in the patient tab and unlocks a text-file download. Staff can separately enter and review a plain-language or translated guide. The optional template tool draws only from recognized clauses in the entered note. | The signing nurse or attending physician owns the original. A clinician also reviews each optional guide. |
 | Follow-up | Scheduling, reminder delivery, access-barrier tickets, replies and verified attendance use shared visit state. Transparent rules suggest human outreach for a reported barrier, no booking by day 3, or a missed visit. | Coordinator owns outreach. Clinic staff verify actual attendance. |
 
 The classifier and controlled translations run locally. This release does not call a generative LLM. The case-note template covers this example. Unrestricted clinical translation would require additional evaluation, clinician workflows and language-specific validation.

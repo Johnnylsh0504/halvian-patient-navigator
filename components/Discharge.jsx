@@ -3,109 +3,73 @@ import React, { useState } from "react";
 import {
   ArrowRight,
   BookOpenCheck,
-  Check,
+  Download,
   CheckCircle2,
   ClipboardCheck,
-  HeartPulse,
   LockKeyhole,
-  Pill,
   Printer,
   ShieldCheck,
   CalendarDays,
 } from "lucide-react";
 import { useCare } from "./CareContext.jsx";
 import { HelpAction, Listen } from "./Controls.jsx";
-import { languages, planRows, visit } from "../lib/content.js";
+import { languages, approvedPhrases } from "../lib/content.js";
+import { dischargeAuthors, noteDownload } from "../lib/discharge.js";
+import { useDischargeNote } from "./useDischargeNote.js";
 import { Rating } from "./Rating.jsx";
-import { approvedPhrases } from "../lib/content.js";
-const rowIcons = [Pill, HeartPulse, CalendarDays];
+
 export function Discharge() {
   const { s, t, action, move } = useCare(),
     [option, setOption] = useState("");
-  const release = s.releases[s.lang];
-  const result = s.teach[s.lang];
-  if (!release)
+  const { note, save, error } = useDischargeNote(s.registration.status === "verified" ? s.registration.visitId : "", s.registration.verifiedAt);
+  if (!note) {
     return (
-      <section className="card pad">
+      <section className="card pad" aria-live="polite">
         <div className="titleline">
-          <div className="symbol">
-            <LockKeyhole size={21} />
-          </div>
-          <h2>
-            {t(
-              "Awaiting clinician review",
-              "Pendiente de revisión clínica",
-              "等待医护人员审核",
-            )}
-          </h2>
+          <div className="symbol"><LockKeyhole size={21} /></div>
+          <h2>{t("Waiting for your discharge note", "Esperando tu nota de alta", "等待出院记录")}</h2>
         </div>
-        <p>
-          {t(
-            "Your care team will check the guide in your chosen language before you can read or listen to it.",
-            "El equipo revisará la guía en tu idioma antes de que puedas leerla o escucharla.",
-            "医护团队审核你所选语言的版本后，你就能阅读或收听。",
-          )}
-        </p>
-        <div className="details">
-          <span>{t("Version requested", "Idioma solicitado", "待审语言")}</span>
-          <strong>{languages[s.lang]}</strong>
-        </div>
-        <small className="subnote">
-          {t(
-            "The discharging clinician completes this review in the separate hospital workspace.",
-            "El profesional de alta completa la revisión en el espacio hospitalario separado.",
-            "出院医护人员将在独立的医院工作区完成审核。",
-          )}
-        </small>
+        <p>{error
+          ? t("Allow browser storage and reopen this page to load your note.", "Permite el almacenamiento del navegador y vuelve a abrir la página para cargar tu nota.", "请开启浏览器存储并重新打开页面，以读取出院记录。")
+          : t("Your nurse or attending physician will write and sign your note. It will appear here automatically when it is ready.", "Tu enfermero o médico tratante escribirá y firmará tu nota. Aparecerá aquí automáticamente cuando esté lista.", "护士或主治医生填写并签署后，你的出院记录会自动出现在这里。")}</p>
       </section>
     );
+  }
+  const guide = note.guides[s.lang];
+  const result = note.teach[s.lang];
+  const download = noteDownload(note);
   return (
     <>
       <section className="card pad printable">
         <div className="sectioncap">
-          <div className="symbol">
-            <BookOpenCheck size={20} />
-          </div>
-          <h2>
-            {t(
-              "Your approved instructions",
-              "Tus instrucciones aprobadas",
-              "已审核的出院说明",
-            )}
-          </h2>
+          <div className="symbol"><BookOpenCheck size={20} /></div>
+          <h2>{t("Your signed discharge note", "Tu nota de alta firmada", "已签署的出院记录")}</h2>
         </div>
-        <p className="verified">
-          <ShieldCheck size={15} />
-          {t("Reviewed by", "Revisada por", "审核人")} {release.clinician} ·{" "}
-          {languages[s.lang]}
+        <p className="verified"><ShieldCheck size={15} />
+          {t("Signed by", "Firmada por", "签署人")} {dischargeAuthors[note.author].name} · {t(...dischargeAuthors[note.author].role)} · {languages[note.language]}
         </p>
-        <div className="planrows">
-          {release.rows.map((row, i) => {
-            const I = rowIcons[i];
-            return (
-              <div key={i}>
-                <I size={19} />
-                <section>
-                  <h3>{t(...planRows[i])}</h3>
-                  <p>{row}</p>
-                </section>
-              </div>
-            );
-          })}
-        </div>
+        <p className="discharge-note-body" lang={note.language}>{note.text}</p>
         <div className="actions">
-          <Listen value={release.rows.join(" ")} />
-          <button className="light" onClick={() => window.print()}>
-            <Printer size={15} />
-            {t("Print guide", "Imprimir guía", "打印指南")}
-          </button>
-          <HelpAction kind="feedback" note={"Guide: " + visit.sourceVersion}>
+          <a className="primary discharge-download" download={download.filename} href={download.href}>
+            <Download size={16} />{t("Download discharge note (.txt)", "Descargar nota de alta (.txt)", "下载出院记录（.txt）")}
+          </a>
+          {s.lang === note.language && <Listen value={note.text} />}
+          <button className="light" onClick={() => window.print()}><Printer size={15} />{t("Print", "Imprimir", "打印")}</button>
+          <HelpAction kind="feedback" note={"Guide: " + note.visitId}>
             {t("Flag as confusing", "No está claro", "标记不清楚")}
           </HelpAction>
         </div>
+        {guide && (
+          <section className="discharge-guide">
+            <h3>{t("Your reviewed guide", "Tu guía revisada", "已审核的患者指南")} · {languages[s.lang]}</h3>
+            <p className="small">{t("Reviewed by", "Revisada por", "审核人")} {dischargeAuthors[guide.author].name}</p>
+            <p className="discharge-note-body" lang={s.lang}>{guide.text}</p>
+            <Listen value={guide.text} />
+          </section>
+        )}
         <Rating kind="discharge" />
       </section>
-      {release.rows[2] === approvedPhrases[s.lang][2] && (
+      {guide?.text === approvedPhrases[s.lang].join("\n\n") && (
         <section className="card pad">
           <div className="titleline">
             <div className="symbol peach">
@@ -164,7 +128,8 @@ export function Discharge() {
                 className="light"
                 disabled={!option}
                 onClick={() => {
-                  action({ type: "teach", ok: option === "correct" });
+                  save({ type: "teach", language: s.lang, correct: option === "correct" });
+                  if (option !== "correct") action({ type: "ticket", kind: "teach", note: "Discharge note " + note.visitId });
                 }}
               >
                 {t("Check answer", "Comprobar respuesta", "确认答案")}
