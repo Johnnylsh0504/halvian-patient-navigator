@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata = {
   title: "Halvian | Patient Navigator",
   description:
-    "Interactive patient communication and follow-up for a fictional emergency department visit.",
+    "Interactive emergency department patient communication and follow-up.",
 };
 export default function Layout({ children }) {
   return (

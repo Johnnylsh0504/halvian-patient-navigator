@@ -140,9 +140,9 @@ export function Assistant() {
             "输入关于就诊的问题…",
           )}
           caption={t(
-            "Use fictional information only. Review dictated text before sending.",
-            "Usa solo datos ficticios. Revisa el dictado antes de enviarlo.",
-            "请仅使用虚构信息；语音转写请核对后发送。",
+            "Review dictated text before sending. Do not include information unrelated to your visit.",
+            "Revisa el dictado antes de enviarlo. No incluyas información ajena a tu visita.",
+            "发送前请核对语音转写内容，请勿填写与本次就诊无关的信息。",
           )}
         />
         {s.turns.length > 0 && <Rating kind="communication" />}

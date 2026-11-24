@@ -158,6 +158,12 @@ svg {
   color: var(--ink);
   max-width: 105px;
 }
+.language select:focus-visible {
+  outline: none;
+}
+.language:focus-within {
+  background: #edf4ef;
+}
 .team-button {
   background: #edf4ef;
   color: var(--deep);
@@ -170,9 +176,67 @@ svg {
   background: white;
   border-bottom: 1px solid var(--line);
 }
+.hospitalmast {
+  background: #f8faf9;
+}
+.clinicalmark {
+  background: #243f4e;
+}
+.hospitalnavwrap {
+  background: #243f4e;
+  border-bottom: 0;
+}
+.hospitaltabs {
+  min-height: 54px;
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.hospitaltabs a,
+.hospitaltabs button {
+  position: relative;
+  min-width: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 11px;
+  color: #dce8e5;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hospitaltabs button {
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+.hospitaltabs a:hover,
+.hospitaltabs a.active,
+.hospitaltabs button:hover,
+.hospitaltabs button.active {
+  color: white;
+  background: #31534f;
+}
+.hospitaltabs a.active:after,
+.hospitaltabs button.active:after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: #d6ed9f;
+}
 .tabs {
   gap: 26px;
   min-height: 54px;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .tabs button {
   position: relative;
@@ -202,6 +266,13 @@ svg {
 }
 .tabs button:hover {
   color: var(--teal);
+}
+.tabs button:disabled {
+  color: #94a29f;
+  cursor: not-allowed;
+}
+.tabs button:disabled:hover {
+  color: #94a29f;
 }
 .main {
   padding-top: 24px;
@@ -309,6 +380,15 @@ svg {
 .tone-discharge .stamp {
   background: #f1cdae;
 }
+.tone-check-in .stamp {
+  background: #dce9a6;
+}
+.tone-symptoms .stamp {
+  background: #f0c7b1;
+}
+.tone-wait .stamp {
+  background: #c5dfe2;
+}
 .tone-follow-up .stamp {
   background: #d7e7f2;
 }
@@ -337,6 +417,7 @@ svg {
 }
 .card {
   box-shadow: 0 2px 5px #193e2d05;
+  min-width: 0;
 }
 .pad,
 .ask {
@@ -416,6 +497,229 @@ svg {
 .composer {
   margin-top: 21px;
 }
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.formgrid.inset {
+  padding: 14px;
+  border-radius: 12px;
+  background: #f5f8f3;
+}
+.field {
+  display: block;
+  min-width: 0;
+}
+.field > span,
+.structured span,
+.summarygrid dt {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.field input:not([type="range"]),
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid #bacbc3;
+  border-radius: 9px;
+  background: white;
+  color: var(--ink);
+  padding: 9px 10px;
+}
+.field textarea {
+  resize: vertical;
+}
+.field input[type="range"] {
+  width: 100%;
+  accent-color: var(--teal);
+}
+.field.wide,
+.wide {
+  grid-column: 1 / -1;
+}
+.symptomtext {
+  position: relative;
+  margin-top: 16px;
+}
+.symptomtext .voice-group {
+  margin-top: 6px;
+}
+.scanbox {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px dashed #9ebcb0;
+  border-radius: 12px;
+  background: #f5f9f5;
+  color: var(--deep);
+}
+.scanbox.compact {
+  margin-top: 14px;
+}
+.scanbox strong,
+.scanbox small {
+  display: block;
+}
+.filebutton {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filebutton input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.summarygrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  margin: 16px 0;
+}
+.summarygrid > div {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+.summarygrid dt,
+.summarygrid dd {
+  margin: 0;
+}
+.summarygrid dd {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.structured {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.structured > div {
+  padding: 13px 14px;
+  border-radius: 11px;
+  background: #f5f8f3;
+}
+.structured p {
+  color: var(--ink);
+}
+.structured ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.checkrow span > svg {
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+.waitoverview {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  margin: 17px 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: #edf5ea;
+}
+.estimate {
+  display: grid;
+  text-align: center;
+  padding-right: 18px;
+  border-right: 1px solid #cbdcca;
+}
+.estimate strong {
+  color: var(--deep);
+  font-size: 46px;
+  line-height: 1;
+}
+.estimate span,
+.estimate small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.waitoverview p {
+  margin: 8px 0 3px;
+}
+.queuepositionnote {
+  display: block;
+}
+.statussteps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.statussteps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 10.5px;
+}
+.statussteps li:before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 13px;
+  left: -50%;
+  width: 100%;
+  border-top: 2px solid var(--line);
+}
+.statussteps li:first-child:before {
+  display: none;
+}
+.statussteps li > span {
+  z-index: 1;
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: white;
+  font-weight: 700;
+}
+.statussteps li.done,
+.statussteps li.current {
+  color: var(--teal);
+}
+.statussteps li.done:before,
+.statussteps li.current:before {
+  border-color: #8eb9a2;
+}
+.statussteps li.done > span,
+.statussteps li.current > span {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: white;
+}
+.urgentbutton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  border: 1px solid #c98d66;
+  border-radius: 9px;
+  padding: 7px 12px;
+  background: #fff6eb;
+  color: #70481d;
+  font-size: 13px;
+  font-weight: 700;
+}
 .fieldlabel,
 .draftfields label span {
   display: block;
@@ -454,6 +758,17 @@ small,
 .inline-action small {
   display: block;
   margin-top: 8px;
+}
+.pendingstatus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: #fff0dc;
+  color: #70481d;
+  font-size: 12px;
+  font-weight: 600;
 }
 .composer > small {
   display: block;
@@ -563,6 +878,27 @@ small,
   border-radius: 15px;
   padding: 16px 18px;
   color: #714829;
+}
+.clinicalnotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 15px;
+  background: #e9eef1;
+  border: 1px solid #d4dfe3;
+  color: #314e59;
+}
+.clinicalnotice svg {
+  margin-top: 2px;
+}
+.clinicalnotice strong {
+  font-size: 14px;
+}
+.clinicalnotice p {
+  margin-top: 4px;
+  color: #4c626a;
+  font-size: 13px;
 }
 .emergency svg {
   margin-top: 2px;
@@ -867,9 +1203,11 @@ small,
   padding: 4px;
   gap: 4px;
   border-radius: 12px;
+  overflow-x: auto;
 }
 .worktabs button {
   flex: 1;
+  min-width: 84px;
   border-radius: 8px;
   background: none;
   border: 0;
@@ -939,6 +1277,186 @@ small,
   border-collapse: collapse;
   font-size: 13px;
   margin: 12px 0;
+}
+.tablewrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+.registrationtable {
+  min-width: 560px;
+}
+.patientlink {
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  color: var(--teal);
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.patientlink:hover {
+  color: var(--deep);
+}
+.emptyqueue {
+  margin-top: 14px !important;
+  padding: 18px;
+  border-radius: 11px;
+  background: #f5f8f3;
+  text-align: center;
+}
+.modalbackdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #102b2a99;
+  backdrop-filter: blur(3px);
+}
+.registrationmodal {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 24px 70px #102b2a40;
+}
+.modalhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.registrationmodal h2 {
+  margin-top: 3px;
+  font-size: 24px;
+}
+.modalactions {
+  justify-content: flex-end;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.insuranceverified {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 14px 0;
+  padding: 13px 14px;
+  border: 1px solid #b9d5bd;
+  border-radius: 11px;
+  background: #edf7ed;
+  color: #195e38;
+}
+.insuranceverified > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.insuranceverified b,
+.insuranceverified small {
+  display: block;
+}
+.insuranceverified small {
+  color: #4c6265;
+  margin-top: 2px;
+}
+.queueoverview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.queueoverview > div {
+  display: grid;
+  gap: 4px;
+  padding: 15px 17px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: white;
+}
+.queueoverview small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.queueoverview strong {
+  color: var(--deep);
+  font-size: 28px;
+  line-height: 1;
+}
+.queueoverview strong span {
+  font-size: 13px;
+}
+.queuesafety p {
+  color: inherit;
+}
+.flowtable {
+  min-width: 720px;
+}
+.flowtable td:first-child {
+  text-align: center;
+}
+.flowtable td:nth-child(2) b,
+.flowtable td:nth-child(2) small {
+  display: block;
+}
+.flowtable td:nth-child(2) small {
+  margin-top: 2px;
+}
+.flowtable tr.urgentrow td {
+  background: #fff8ef;
+}
+.queueposition {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--teal);
+}
+.prioritypill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+}
+.prioritypill i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7b918a;
+}
+.prioritypill.urgent {
+  color: #8d2f22;
+}
+.prioritypill.urgent i {
+  background: #c84432;
+  box-shadow: 0 0 0 3px #f4d8d3;
+}
+.prioritypill.high {
+  color: #91530c;
+}
+.prioritypill.high i {
+  background: #d6801d;
+}
+.prioritypill.moderate i {
+  background: #d2a329;
+}
+.prioritypill.standard i {
+  background: #4d8b69;
 }
 .pad caption {
   text-align: left;
@@ -1083,6 +1601,60 @@ small,
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     min-height: 42px;
+  }
+  .hospitaltabs {
+    min-height: 48px;
+  }
+  .hospitaltabs a,
+  .hospitaltabs button {
+    min-width: 96px;
+    padding: 10px 8px;
+    font-size: 11.5px;
+  }
+  .formgrid,
+  .summarygrid {
+    grid-template-columns: 1fr;
+  }
+  .scanbox {
+    grid-template-columns: auto 1fr;
+  }
+  .scanbox .filebutton,
+  .scanbox > button,
+  .scanbox > .wide {
+    grid-column: 1 / -1;
+  }
+  .waitoverview {
+    grid-template-columns: 1fr;
+  }
+  .estimate {
+    border-right: 0;
+    border-bottom: 1px solid #cbdcca;
+    padding: 0 0 12px;
+  }
+  .statussteps {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .statussteps li {
+    grid-template-columns: 28px 1fr;
+    justify-items: start;
+    align-items: center;
+    text-align: left;
+  }
+  .statussteps li:before {
+    top: -9px;
+    left: 13px;
+    height: 17px;
+    width: 0;
+    border-top: 0;
+    border-left: 2px solid var(--line);
+  }
+  .insuranceverified {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .queueoverview {
+    grid-template-columns: 1fr;
   }
   .tabs button {
     white-space: normal;

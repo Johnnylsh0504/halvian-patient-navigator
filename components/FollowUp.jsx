@@ -118,9 +118,9 @@ export function FollowUp() {
             ) : (
               <p>
                 {t(
-                  "These demo slots have passed. A coordinator can help below.",
-                  "Los horarios ya pasaron. Pide ayuda abajo.",
-                  "演示时段已过。可在下方请求协调员协助。",
+                  "These appointment times have passed. A coordinator can help below.",
+                  "Estos horarios ya pasaron. Pide ayuda abajo.",
+                  "这些预约时间已过。可在下方请求协调员协助。",
                 )}
               </p>
             )}
@@ -170,9 +170,9 @@ export function FollowUp() {
               s.reminder !== "none" && (
                 <small>
                   {t(
-                    "Preview only · one day before the appointment.",
-                    "Solo demostración · un día antes de la cita.",
-                    "模拟提醒 · 预约前一天",
+                    "Reminder scheduled for one day before the appointment.",
+                    "Recordatorio programado un día antes de la cita.",
+                    "提醒安排在预约前一天发送。",
                   )}
                 </small>
               )

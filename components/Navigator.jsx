@@ -3,14 +3,15 @@ import React from "react";
 import {
   BookOpenCheck,
   CalendarDays,
+  ClipboardList,
   Compass,
+  Activity,
+  Clock3,
   HeartHandshake,
   Languages,
   MessagesSquare,
   RotateCcw,
   ShieldCheck,
-  Stethoscope,
-  Users,
   LifeBuoy,
 } from "lucide-react";
 import { CareProvider, useCare } from "./CareContext.jsx";
@@ -20,18 +21,51 @@ import {
   languages,
   prettyDate,
   dayDate,
-  visit,
   slots,
   issues,
   helpText,
+  waitStages,
 } from "../lib/content.js";
+import { CheckIn } from "./CheckIn.jsx";
+import { SymptomIntake } from "./SymptomIntake.jsx";
+import { WaitTime } from "./WaitTime.jsx";
 import { Assistant } from "./Assistant.jsx";
 import { Discharge } from "./Discharge.jsx";
 import { FollowUp } from "./FollowUp.jsx";
-import { CareTeam } from "./CareTeam.jsx";
 import { HelpAction } from "./Controls.jsx";
-export const icons = [MessagesSquare, BookOpenCheck, CalendarDays];
+export const icons = [
+  ClipboardList,
+  Activity,
+  Clock3,
+  MessagesSquare,
+  BookOpenCheck,
+  CalendarDays,
+];
 const heroText = {
+  "check-in": [
+    ["Let’s get you checked in", "Completa tu registro", "开始登记"],
+    [
+      "Confirm your details yourself or with help from a caregiver.",
+      "Confirma tus datos por tu cuenta o con ayuda de un acompañante.",
+      "请自行确认个人信息，也可由陪护人员协助。",
+    ],
+  ],
+  symptoms: [
+    ["Tell us what’s going on", "Cuéntanos qué ocurre", "告诉我们你的情况"],
+    [
+      "Use text, voice, or an optional photo to prepare a report for the nurse.",
+      "Usa texto, voz o una foto opcional para preparar un informe para enfermería.",
+      "可通过文字、语音或可选照片向护士描述症状。",
+    ],
+  ],
+  wait: [
+    ["Know what happens next", "Conoce el siguiente paso", "了解下一步"],
+    [
+      "See your visit status, estimated wait, and explanations for changes.",
+      "Consulta el estado de tu visita, la espera estimada y los cambios.",
+      "查看就诊进度、预计等候时间及变化说明。",
+    ],
+  ],
   assistant: [
     ["How can we help?", "¿Cómo podemos ayudarte?", "有什么能帮到你？"],
     [
@@ -58,7 +92,9 @@ const heroText = {
   ],
 };
 function Header() {
-  const { s, t, language, screen, move, staff, toggleStaff } = useCare();
+  const { s, t, language, screen, move } = useCare();
+  const unlocked = s.registration.status === "verified";
+  const activeScreen = unlocked ? screen : "check-in";
   return (
     <>
       <header className="mast">
@@ -90,17 +126,6 @@ function Header() {
                 ))}
               </select>
             </label>
-            <button
-              className={"team-button " + (staff ? "selected" : "")}
-              onClick={toggleStaff}
-            >
-              {staff ? <Users size={16} /> : <Stethoscope size={16} />}
-              <span>
-                {staff
-                  ? t("Patient view", "Vista del paciente", "患者视图")
-                  : t("Care team", "Equipo clínico", "医护团队")}
-              </span>
-            </button>
           </div>
         </div>
       </header>
@@ -110,9 +135,10 @@ function Header() {
             const I = icons[i];
             return (
               <button
-                className={!staff && screen === key ? "active" : ""}
-                aria-current={!staff && screen === key ? "page" : undefined}
+                className={activeScreen === key ? "active" : ""}
+                aria-current={activeScreen === key ? "page" : undefined}
                 key={key}
+                disabled={key !== "check-in" && !unlocked}
                 onClick={() => move(key)}
               >
                 <I size={18} />
@@ -126,34 +152,22 @@ function Header() {
   );
 }
 function Hero() {
-  const { t, screen, staff } = useCare();
-  const I = staff ? Stethoscope : icons[screens.indexOf(screen)];
+  const { s, t, screen } = useCare();
+  const activeScreen =
+    s.registration.status === "verified" ? screen : "check-in";
+  const I = icons[screens.indexOf(activeScreen)];
   return (
-    <section className={"hero tone-" + (staff ? "staff" : screen)}>
+    <section className={"hero tone-" + activeScreen}>
       <div>
         <div className="eyebrow">
-          {staff
-            ? t("STAFF WORKSPACE", "ESPACIO DEL EQUIPO", "医护工作区")
-            : t(
-                "PATIENT COMMUNICATION",
-                "COMUNICACIÓN CON EL PACIENTE",
-                "患者沟通",
-              )}
+          {t(
+            "PATIENT EXPERIENCE",
+            "EXPERIENCIA DEL PACIENTE",
+            "患者服务",
+          )}
         </div>
-        <h1>
-          {staff
-            ? t("Care team desk", "Mesa del equipo clínico", "医护工作台")
-            : t(...heroText[screen][0])}
-        </h1>
-        <p>
-          {staff
-            ? t(
-                "Review a guide, respond to a request, or verify a follow-up visit.",
-                "Revisa una guía, responde a solicitudes o verifica una visita.",
-                "审核出院说明、回复请求或核实复诊记录。",
-              )
-            : t(...heroText[screen][1])}
-        </p>
+        <h1>{t(...heroText[activeScreen][0])}</h1>
+        <p>{t(...heroText[activeScreen][1])}</p>
       </div>
       <div className="hero-art" aria-hidden="true">
         <div className="orbit o1" />
@@ -169,8 +183,18 @@ function Hero() {
   );
 }
 function Rail() {
-  const { s, t, move, screen, staff } = useCare();
+  const { s, t } = useCare();
   const slot = s.slot !== null ? slots[s.slot] : null;
+  const patientName =
+    s.registration.fields.fullName || t("Patient", "Paciente", "患者");
+  const initials = s.registration.fields.fullName
+    ? s.registration.fields.fullName
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+    : "P";
   return (
     <aside className="rail">
       <section className="card visit">
@@ -178,11 +202,12 @@ function Rail() {
           {t("YOUR VISIT", "TU VISITA", "本次就诊")}
         </div>
         <div className="person">
-          <div className="avatar">AR</div>
+          <div className="avatar">{initials}</div>
           <div>
-            <strong>{visit.name}</strong>
+            <strong>{patientName}</strong>
             <small>
-              {t("Demo patient", "Paciente ficticio", "虚构患者")} · {visit.id}
+              {s.registration.visitId ||
+                t("Visit ID pending", "ID de visita pendiente", "就诊编号待生成")}
             </small>
           </div>
         </div>
@@ -191,8 +216,12 @@ function Rail() {
           <b>{t("Emergency department", "Urgencias", "急诊科")}</b>
         </div>
         <div className="visitline">
-          <span>{t("Demo date", "Fecha simulada", "演示日期")}</span>
+          <span>{t("Visit date", "Fecha de la visita", "就诊日期")}</span>
           <b>{prettyDate(dayDate(s.day), s.lang, true)}</b>
+        </div>
+        <div className="visitline">
+          <span>{t("Visit status", "Estado", "就诊状态")}</span>
+          <b>{t(...waitStages[s.wait.status])}</b>
         </div>
         {slot && (
           <div className="visitline">
@@ -244,11 +273,9 @@ function Rail() {
               ))}
           </ul>
         )}
-        {!staff && (
-          <HelpAction>
-            {t("Ask staff", "Pedir ayuda", "联系工作人员")}
-          </HelpAction>
-        )}
+        <HelpAction>
+          {t("Ask staff", "Pedir ayuda", "联系工作人员")}
+        </HelpAction>
       </section>
       <section className="emergency">
         <LifeBuoy size={18} />
@@ -263,7 +290,12 @@ function Rail() {
   );
 }
 function Shell() {
-  const { s, t, screen, staff, reset, storageIssue } = useCare();
+  const { s, t, ready, screen, move, reset, storageIssue } = useCare();
+  const unlocked = s.registration.status === "verified";
+  const activeScreen = unlocked ? screen : "check-in";
+  React.useEffect(() => {
+    if (ready && !unlocked && screen !== "check-in") move("check-in");
+  }, [ready, unlocked, screen]);
   return (
     <>
       <a className="skip" href="#content">
@@ -275,13 +307,17 @@ function Shell() {
         <div className="layout">
           <div
             className="column"
-            key={(staff ? "staff" : screen) + "-" + s.lang}
+            key={activeScreen + "-" + s.lang}
           >
-            {staff ? (
-              <CareTeam />
-            ) : screen === "assistant" ? (
+            {activeScreen === "check-in" ? (
+              <CheckIn />
+            ) : activeScreen === "symptoms" ? (
+              <SymptomIntake />
+            ) : activeScreen === "wait" ? (
+              <WaitTime />
+            ) : activeScreen === "assistant" ? (
               <Assistant />
-            ) : screen === "discharge" ? (
+            ) : activeScreen === "discharge" ? (
               <Discharge />
             ) : (
               <FollowUp />
@@ -294,7 +330,7 @@ function Shell() {
             {t(
               "Browser storage is unavailable. This visit lasts only until you close or reload the page.",
               "El almacenamiento no está disponible. Esta visita dura hasta cerrar o recargar.",
-              "浏览器存储不可用，关闭或刷新会清除此演示记录。",
+              "浏览器存储不可用，关闭或刷新后本次就诊记录将不会保留。",
             )}
           </p>
         )}
@@ -303,21 +339,21 @@ function Shell() {
         <span>
           <ShieldCheck size={15} />{" "}
           {t(
-            "Fictional visit · Competition demo",
-            "Visita ficticia · Demo del concurso",
-            "虚构就诊 · 比赛演示",
+            "Secure patient experience",
+            "Experiencia segura del paciente",
+            "安全患者服务",
           )}
         </span>
         <button onClick={reset}>
           <RotateCcw size={13} />
-          {t("Restart demo", "Reiniciar demo", "重新演示")}
+          {t("Start over", "Comenzar de nuevo", "重新开始")}
         </button>
       </footer>
     </>
   );
 }
 export default function Navigator({
-  initialScreen = "assistant",
+  initialScreen = "check-in",
   portable = false,
 }) {
   return (

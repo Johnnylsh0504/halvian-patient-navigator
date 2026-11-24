@@ -9,14 +9,13 @@ import React, {
 import { blank, change, restore } from "../lib/model.js";
 import { pick, screens } from "../lib/content.js";
 const Care = createContext(null);
-const key = "halvian.navigator.visit.v1";
+const key = "halvian.navigator.visit.v3";
 export const useCare = () => useContext(Care);
 export function CareProvider({ initialScreen, portable = false, children }) {
   const [s, dispatch] = useReducer(change, undefined, blank);
   const [ready, setReady] = useState(false),
     [screen, setScreen] = useState(initialScreen);
-  const [staff, setStaff] = useState(false),
-    [storageIssue, setStorageIssue] = useState(false);
+  const [storageIssue, setStorageIssue] = useState(false);
   function action(a) {
     dispatch(a);
   }
@@ -40,12 +39,19 @@ export function CareProvider({ initialScreen, portable = false, children }) {
         ? window.location.hash.slice(1)
         : window.location.pathname.split("/").filter(Boolean).at(-1);
       setScreen(screens.includes(part) ? part : initialScreen);
-      setStaff(false);
     };
     readScreen();
     window.addEventListener("popstate", readScreen);
+    const syncVisit = (event) => {
+      if (event.key === key)
+        dispatch({ type: "hydrate", saved: restore(event.newValue) });
+    };
+    window.addEventListener("storage", syncVisit);
     setReady(true);
-    return () => window.removeEventListener("popstate", readScreen);
+    return () => {
+      window.removeEventListener("popstate", readScreen);
+      window.removeEventListener("storage", syncVisit);
+    };
   }, [initialScreen, portable]);
   useEffect(() => {
     if (ready) {
@@ -63,20 +69,15 @@ export function CareProvider({ initialScreen, portable = false, children }) {
   const t = (en, es, zh) => pick(s.lang, en, es, zh);
   function move(next) {
     if (!screens.includes(next)) return;
+    if (next !== "check-in" && s.registration.status !== "verified") return;
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (next !== screen)
       window.history.pushState(
         {},
         "",
-        portable ? "#" + next : "/navigator/" + next + "/",
+        portable ? "#" + next : "/patient/" + next + "/",
       );
     setScreen(next);
-    setStaff(false);
-    window.scrollTo(0, 0);
-  }
-  function toggleStaff() {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    setStaff(!staff);
     window.scrollTo(0, 0);
   }
   function language(value) {
@@ -87,9 +88,9 @@ export function CareProvider({ initialScreen, portable = false, children }) {
     if (
       window.confirm(
         t(
-          "Restart this fictional visit and clear its demo activity?",
-          "¿Reiniciar esta visita ficticia y borrar su actividad?",
-          "重新开始这次虚构就诊并清除演示记录？",
+          "Restart this visit and clear its activity?",
+          "¿Reiniciar esta visita y borrar su actividad?",
+          "重新开始本次就诊并清除所有记录？",
         ),
       )
     ) {
@@ -106,8 +107,6 @@ export function CareProvider({ initialScreen, portable = false, children }) {
         ready,
         screen,
         move,
-        staff,
-        toggleStaff,
         language,
         reset,
         storageIssue,

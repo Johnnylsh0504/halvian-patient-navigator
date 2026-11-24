@@ -11,7 +11,6 @@ import {
   Pill,
   Printer,
   ShieldCheck,
-  Stethoscope,
   CalendarDays,
 } from "lucide-react";
 import { useCare } from "./CareContext.jsx";
@@ -21,7 +20,7 @@ import { Rating } from "./Rating.jsx";
 import { approvedPhrases } from "../lib/content.js";
 const rowIcons = [Pill, HeartPulse, CalendarDays];
 export function Discharge() {
-  const { s, t, action, move, toggleStaff } = useCare(),
+  const { s, t, action, move } = useCare(),
     [option, setOption] = useState("");
   const release = s.releases[s.lang];
   const result = s.teach[s.lang];
@@ -51,15 +50,11 @@ export function Discharge() {
           <span>{t("Version requested", "Idioma solicitado", "待审语言")}</span>
           <strong>{languages[s.lang]}</strong>
         </div>
-        <button className="primary" onClick={toggleStaff}>
-          <Stethoscope size={16} />
-          {t("Open clinician review", "Abrir revisión clínica", "打开医护审核")}
-        </button>
         <small className="subnote">
           {t(
-            "Demo role switch · Discharging clinician",
-            "Cambio de rol de demo · Profesional de alta",
-            "演示角色切换 · 出院医护人员",
+            "The discharging clinician completes this review in the separate hospital workspace.",
+            "El profesional de alta completa la revisión en el espacio hospitalario separado.",
+            "出院医护人员将在独立的医院工作区完成审核。",
           )}
         </small>
       </section>

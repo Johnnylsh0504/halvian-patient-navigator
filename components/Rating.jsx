@@ -20,11 +20,17 @@ export function Rating({ kind }) {
               "¿Qué tan clara fue la comunicación con enfermería o tu médico?",
               "护士或医生与你沟通得清楚吗？",
             )
-          : t(
+          : kind === "wait"
+            ? t(
+                "How clear was this wait-time update?",
+                "¿Qué tan clara fue esta actualización de espera?",
+                "这次等候时间更新清楚吗？",
+              )
+            : t(
               "How clear were the medicine and follow-up instructions?",
               "¿Qué tan claras fueron las instrucciones de medicamentos y seguimiento?",
               "用药与复诊说明清楚吗？",
-            )}
+              )}
       </span>
       <div>
         {options.map((name, i) => (

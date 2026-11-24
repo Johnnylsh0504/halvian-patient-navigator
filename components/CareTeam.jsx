@@ -13,6 +13,12 @@ import {
   Route,
   ShieldCheck,
   Sparkles,
+  Activity,
+  Clock3,
+  UserCheck,
+  X,
+  BadgeCheck,
+  Download,
 } from "lucide-react";
 import { useCare } from "./CareContext.jsx";
 import {
@@ -23,17 +29,236 @@ import {
   slots,
   prettyDate,
   dayDate,
+  coverageOptions,
 } from "../lib/content.js";
 import {
   audit,
   auditCoverage,
   dueReminder,
+  edQueue,
   outreach,
   within14,
 } from "../lib/model.js";
 import { draftPlan } from "../lib/discharge.js";
+
+const elapsed = (start, end) =>
+  start && end ? Math.max(0, Math.round((end - start) / 60000)) : null;
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+function downloadInsurance(registration) {
+  const confirmedOn = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date(registration.verifiedAt || registration.submittedAt));
+  const coverage = coverageOptions[registration.fields.coverage]?.[0] || "";
+  const rows = [
+    ["Patient", registration.fields.fullName],
+    ["Visit ID", registration.visitId],
+    ["Insurance provider", registration.fields.insurerName],
+    ["Coverage type", coverage],
+    ["Member ID", registration.fields.memberId],
+    ["Insurance status", "Information confirmed"],
+    ["Confirmed on", confirmedOn],
+  ];
+  const document = `<!doctype html><html><head><meta charset="utf-8"><title>Insurance information</title><style>body{font-family:Arial,sans-serif;color:#182d31;margin:48px;max-width:760px}h1{font-size:28px;margin-bottom:6px}p{color:#4c6265}.status{display:inline-block;background:#e2efdd;color:#195e38;padding:7px 11px;border-radius:999px;font-weight:700;margin:12px 0 24px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #d8e2db}th{width:34%;color:#4c6265}footer{margin-top:30px;font-size:12px;color:#4c6265}</style></head><body><h1>Insurance information</h1><p>Halvian Patient Navigator</p><div class="status">Insurance information confirmed</div><table>${rows.map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`).join("")}</table><footer>Generated from the hospital registration record.</footer></body></html>`;
+  const url = URL.createObjectURL(
+    new Blob([document], { type: "text/html;charset=utf-8" }),
+  );
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.download = `insurance-information-${registration.visitId}.html`;
+  window.document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function IntakeDesk() {
+  const { s, t, action } = useCare();
+  const [selectedId, setSelectedId] = useState(null);
+  const registrations = s.registrations
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(a.status === "verified") - Number(b.status === "verified") ||
+        b.submittedAt - a.submittedAt,
+    );
+  const selected = s.registrations.find(
+    (registration) => registration.visitId === selectedId,
+  );
+  const insuranceConfirmed =
+    !!selected &&
+    selected.fields.coverage !== "uninsured" &&
+    !!selected.fields.insurerName &&
+    !!selected.fields.memberId;
+  const symptoms = s.symptoms;
+  React.useEffect(() => {
+    if (!selectedId) return;
+    const close = (event) => {
+      if (event.key === "Escape") setSelectedId(null);
+    };
+    document.addEventListener("keydown", close);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", close);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedId]);
+  return (
+    <>
+      <section className="card pad">
+        <div className="sectioncap">
+          <div className="symbol"><UserCheck size={20} /></div>
+          <h2>{t("Registration queue", "Cola de registros", "登记队列")}</h2>
+          <b className="count">{registrations.length}</b>
+        </div>
+        <p>{t("Select a patient name to review and verify their registration.", "Selecciona el nombre de un paciente para revisar y verificar su registro.", "选择患者姓名以审核并确认登记信息。")}</p>
+        {registrations.length === 0 ? (
+          <p className="emptyqueue">{t("No registrations are waiting.", "No hay registros pendientes.", "当前没有登记记录。")}</p>
+        ) : (
+          <div className="tablewrap">
+            <table className="registrationtable">
+              <thead><tr><th>{t("Patient", "Paciente", "患者")}</th><th>{t("Visit ID", "ID de visita", "就诊编号")}</th><th>{t("Coverage", "Cobertura", "保险")}</th><th>{t("Status", "Estado", "状态")}</th></tr></thead>
+              <tbody>
+                {registrations.map((registration) => (
+                  <tr key={registration.visitId}>
+                    <td><button className="patientlink" onClick={() => setSelectedId(registration.visitId)}>{registration.fields.fullName}</button></td>
+                    <td>{registration.visitId}</td>
+                    <td>{registration.fields.insurerName || t(...coverageOptions[registration.fields.coverage])}</td>
+                    <td><span className={"tag " + (registration.status === "verified" ? "green" : "amber")}>{registration.status === "verified" ? t("Verified", "Verificado", "已核实") : t("Awaiting verification", "Pendiente", "等待核实")}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      {selected && (
+        <div className="modalbackdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedId(null); }}>
+          <section className="registrationmodal" role="dialog" aria-modal="true" aria-labelledby="registration-review-title">
+            <div className="modalhead">
+              <div><span className="eyebrow">{selected.visitId}</span><h2 id="registration-review-title">{t("Verify registration", "Verificar registro", "核实登记信息")}</h2></div>
+              <button className="iconbtn" aria-label={t("Close", "Cerrar", "关闭")} onClick={() => setSelectedId(null)}><X size={19} /></button>
+            </div>
+            <p className="verified"><ShieldCheck size={15} /> {selected.status === "verified" ? t("Verified by registration staff", "Verificado por registro", "登记人员已核实") : t("Review all details before verification.", "Revisa todos los datos antes de verificar.", "核实前请审核所有信息。")}</p>
+            <dl className="summarygrid">
+              <div><dt>{t("Patient", "Paciente", "患者")}</dt><dd>{selected.fields.fullName}</dd></div>
+              <div><dt>{t("Date of birth", "Fecha de nacimiento", "出生日期")}</dt><dd>{selected.fields.birthDate}</dd></div>
+              <div><dt>{t("Phone", "Teléfono", "电话")}</dt><dd>{selected.fields.phone}</dd></div>
+              <div><dt>{t("Address", "Dirección", "地址")}</dt><dd>{selected.fields.address}</dd></div>
+              <div><dt>{t("Coverage", "Cobertura", "保险")}</dt><dd>{t(...coverageOptions[selected.fields.coverage])}</dd></div>
+              {selected.fields.insurerName && <div><dt>{t("Insurance provider", "Proveedor de seguro", "保险提供方")}</dt><dd>{selected.fields.insurerName}</dd></div>}
+              <div><dt>{t("Member ID", "Número de miembro", "保险编号")}</dt><dd>{selected.fields.memberId || "—"}</dd></div>
+              <div><dt>{t("Preferred language", "Idioma preferido", "首选语言")}</dt><dd>{languages[selected.fields.preferredLanguage]}</dd></div>
+              <div><dt>{t("Entry method", "Método de ingreso", "录入方式")}</dt><dd>{selected.source === "scan" ? t("Document provided", "Documento proporcionado", "已提供证件") : t("Manual entry", "Ingreso manual", "手动录入")}</dd></div>
+              {selected.scanName && <div><dt>{t("Document", "Documento", "文件")}</dt><dd>{selected.scanName}</dd></div>}
+            </dl>
+            {insuranceConfirmed && (
+              <div className="insuranceverified">
+                <div><BadgeCheck size={20} /><span><b>{t("Insurance information confirmed", "Información del seguro confirmada", "保险信息已确认")}</b><small>{selected.fields.insurerName} · {selected.fields.memberId}</small></span></div>
+                <button className="light" onClick={() => downloadInsurance(selected)}><Download size={16} /> {t("Download insurance info", "Descargar información del seguro", "下载保险信息")}</button>
+              </div>
+            )}
+            {selected.assisted && <p className="callout"><span><b>{t("Caregiver-assisted entry", "Ingreso con ayuda de acompañante", "陪护协助录入")}</b><br />{selected.caregiverName} · {selected.relationship || "—"}</span></p>}
+            <div className="actions modalactions">
+              <button className="light" onClick={() => setSelectedId(null)}>{t("Close", "Cerrar", "关闭")}</button>
+              <button className="primary" disabled={selected.status === "verified"} onClick={() => action({ type: "verify-registration", visitId: selected.visitId })}><UserCheck size={16} /> {selected.status === "verified" ? t("Registration verified", "Registro verificado", "登记已核实") : t("Verify registration", "Verificar registro", "确认登记信息")}</button>
+            </div>
+          </section>
+        </div>
+      )}
+      <section className="card pad">
+        <div className="sectioncap">
+          <div className="symbol peach"><Activity size={20} /></div>
+          <h2>{t("Symptom intake review", "Revisión de síntomas", "审核症状信息")}</h2>
+        </div>
+        {symptoms.status === "not-started" ? (
+          <p>{t("No symptom report has been submitted.", "No se ha enviado un informe de síntomas.", "尚未提交症状报告。")}</p>
+        ) : (
+          <>
+            {symptoms.structured?.urgent && <div className="callout warn"><b>{t("Warning terms detected—assess now", "Se detectaron términos de alerta—evaluar ahora", "检测到警示词——请立即评估")}</b></div>}
+            <div className="structured">
+              <div><span>{t("Patient’s original words", "Palabras originales", "患者原话")}</span><p>“{symptoms.description}”</p></div>
+              <div><span>{t("Structured intake", "Ingreso estructurado", "结构化信息")}</span><ul><li>{t("Onset", "Inicio", "开始时间")}: {symptoms.onset}</li><li>{t("Severity", "Intensidad", "严重程度")}: {symptoms.severity}/10</li><li>{t("Reporter", "Informante", "报告人")}: {symptoms.reporter === "caregiver" ? symptoms.caregiverName : t("Patient", "Paciente", "患者")}</li>{symptoms.photoName && <li>{t("Photo consent recorded", "Consentimiento de foto registrado", "已记录图片授权")} · {symptoms.photoName}</li>}</ul></div>
+            </div>
+            <button className="primary" disabled={symptoms.status === "reviewed"} onClick={() => action({ type: "review-symptoms" })}><ClipboardCheck size={16} /> {t("Mark nurse review complete", "Marcar revisión completa", "标记护士审核完成")}</button>
+          </>
+        )}
+      </section>
+    </>
+  );
+}
+
+function FlowDesk() {
+  const { s, t } = useCare();
+  const queue = edQueue(s);
+  const priorityLabels = {
+    urgent: t("Urgent warning", "Alerta urgente", "紧急警示"),
+    high: t("High priority", "Prioridad alta", "高优先级"),
+    moderate: t("Moderate priority", "Prioridad media", "中等优先级"),
+    standard: t("Standard priority", "Prioridad estándar", "常规优先级"),
+    pending: t("Assessment pending", "Evaluación pendiente", "等待评估"),
+  };
+  const assessed = queue.filter((entry) => entry.priority.rank > 0);
+  const averageWait = queue.length
+    ? Math.round(
+        queue.reduce((sum, entry) => sum + entry.estimatedMinutes, 0) /
+          queue.length,
+      )
+    : 0;
+  return (
+    <>
+      <section className="queueoverview">
+        <div><small>{t("Waiting patients", "Pacientes en espera", "等候患者")}</small><strong>{queue.length}</strong></div>
+        <div><small>{t("Assessed", "Evaluados", "已评估")}</small><strong>{assessed.length}</strong></div>
+        <div><small>{t("Average estimated wait", "Espera media estimada", "平均预计等候")}</small><strong>{averageWait}<span>{t(" min", " min", " 分钟")}</span></strong></div>
+      </section>
+      <section className="card pad">
+        <div className="sectioncap">
+          <div className="symbol"><Clock3 size={20} /></div>
+          <h2>{t("Live ED queue", "Cola de urgencias en vivo", "实时急诊队列")}</h2>
+          <b className="count">{queue.length}</b>
+        </div>
+        <p>{t("The queue recalculates automatically from active registrations, warning signals, reported severity, and arrival time.", "La cola se recalcula automáticamente según registros activos, alertas, intensidad informada y hora de llegada.", "队列会根据当前登记、警示信号、患者报告的严重程度和到达时间自动重新计算。")}</p>
+        <div className="callout warn queuesafety">
+          <Activity size={18} />
+          <p>{t("Queue priority supports operations; trained clinical staff remain responsible for formal triage and immediate intervention.", "La prioridad de la cola apoya las operaciones; el personal clínico capacitado sigue siendo responsable del triaje y la intervención inmediata.", "队列优先级用于辅助运营；正式分诊和紧急干预仍由受过培训的临床人员负责。")}</p>
+        </div>
+        {queue.length === 0 ? (
+          <p className="emptyqueue">{t("No patients are currently waiting.", "No hay pacientes esperando.", "当前没有患者等候。")}</p>
+        ) : (
+          <div className="tablewrap">
+            <table className="flowtable">
+              <thead><tr><th>#</th><th>{t("Patient", "Paciente", "患者")}</th><th>{t("Priority", "Prioridad", "优先级")}</th><th>{t("Reported severity", "Intensidad informada", "报告严重程度")}</th><th>{t("Status", "Estado", "状态")}</th><th>{t("Estimated wait", "Espera estimada", "预计等候")}</th></tr></thead>
+              <tbody>
+                {queue.map((entry) => (
+                  <tr key={entry.visitId} className={entry.priority.key === "urgent" ? "urgentrow" : ""}>
+                    <td><b className="queueposition">{entry.position}</b></td>
+                    <td><b>{entry.fields.fullName}</b><small>{entry.visitId}</small></td>
+                    <td><span className={"prioritypill " + entry.priority.key}><i />{priorityLabels[entry.priority.key]}</span></td>
+                    <td>{entry.priority.severity === null ? "—" : `${entry.priority.severity}/10`}</td>
+                    <td>{entry.status !== "verified" ? t("Registration review", "Revisión de registro", "登记审核") : !entry.symptoms ? t("Symptom intake pending", "Síntomas pendientes", "等待症状填报") : t("Waiting for clinician", "Espera al profesional", "等待临床人员")}</td>
+                    <td><b>{entry.estimatedMinutes === 0 ? t("Next", "Siguiente", "下一位") : `~${entry.estimatedMinutes} ${t("min", "min", "分钟")}`}</b></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
 function Review() {
-  const { s, t, action, move } = useCare(),
+  const { s, t, action } = useCare(),
     [rows, setRows] = useState(null),
     [checked, setChecked] = useState(false),
     [error, setError] = useState("");
@@ -60,10 +285,13 @@ function Review() {
               "该语言版本已审核，患者现在可以查看。",
             )}
           </div>
-          <button className="primary" onClick={() => move("discharge")}>
-            {t("View patient guide", "Ver guía del paciente", "查看患者指南")}
-            <ArrowRight size={15} />
-          </button>
+          <p className="small">
+            {t(
+              "The approved version is now available in the separate patient experience.",
+              "La versión aprobada ya está disponible en la experiencia separada del paciente.",
+              "已审核版本现已在独立患者端提供。",
+            )}
+          </p>
         </>
       ) : (
         <>
@@ -171,7 +399,7 @@ function Ticket({ q }) {
       <small>
         {q.id} · {languages[q.lang]} ·{" "}
         {q.owner === "coord"
-          ? "Sam Park · " + t("Coordinator", "Coordinación", "协调员")
+          ? visit.coordinator + " · " + t("Coordinator", "Coordinación", "协调员")
           : visit.clinician}
       </small>
       {q.note && <p>“{q.note}”</p>}
@@ -237,9 +465,9 @@ function Queue() {
             <p>
               {reason === "barrier"
                 ? t(
-                    "The patient reported a barrier. Sam Park owns outreach.",
-                    "El paciente indicó una barrera. Sam Park se encarga del contacto.",
-                    "患者报告了复诊障碍，由协调员 Sam Park 联系。",
+                    "The patient reported a barrier. The care coordinator owns outreach.",
+                    "El paciente indicó una barrera. Coordinación se encarga del contacto.",
+                    "患者报告了复诊障碍，由护理协调员联系。",
                   )
                 : reason === "unbooked"
                   ? t(
@@ -305,9 +533,9 @@ function Verify() {
       <div className="details">
         <span>
           {t(
-            "Fictional visit clock",
-            "Reloj de la visita ficticia",
-            "虚构就诊时钟",
+            "Visit timeline",
+            "Cronología de la visita",
+            "就诊时间线",
           )}
         </span>
         <strong>
@@ -344,9 +572,9 @@ function Verify() {
               onClick={() => action({ type: "reminded" })}
             >
               {t(
-                "Log simulated reminder",
-                "Registrar recordatorio simulado",
-                "记录模拟提醒",
+                "Log reminder",
+                "Registrar recordatorio",
+                "记录提醒",
               )}
             </button>
           </div>
@@ -356,9 +584,9 @@ function Verify() {
         <p className="verified">
           <Check size={15} />
           {t(
-            "Simulated reminder logged",
-            "Recordatorio simulado registrado",
-            "已记录模拟提醒",
+            "Reminder logged",
+            "Recordatorio registrado",
+            "已记录提醒",
           )}
         </p>
       )}
@@ -428,9 +656,9 @@ function Equity() {
       <table>
         <caption>
           {t(
-            "Fictional cohort · by preferred language at registration",
-            "Cohorte ficticia · idioma de registro",
-            "虚构队列 · 按登记时的首选语言",
+            "Follow-up cohort · by preferred language at registration",
+            "Cohorte de seguimiento · idioma de registro",
+            "复诊队列 · 按登记时的首选语言",
           )}
         </caption>
         <thead>
@@ -466,9 +694,9 @@ function Equity() {
         </b>
         .{" "}
         {t(
-          "Only visits with 14 days of observation enter the denominator. These small fictional groups illustrate the calculation.",
-          "Se incluyen visitas con 14 días de observación. Los grupos ficticios ilustran el cálculo.",
-          "仅统计已观察满 14 天的就诊。小样本虚构分组仅展示算法。",
+          "Only visits with 14 days of observation enter the denominator. Review small groups carefully before interpreting differences.",
+          "Se incluyen visitas con 14 días de observación. Revisa con cuidado los grupos pequeños antes de interpretar diferencias.",
+          "仅统计已观察满 14 天的就诊。解读差异前请谨慎评估小样本分组。",
         )}
       </p>
       <details className="source">
@@ -482,9 +710,9 @@ function Equity() {
         <table>
           <caption>
             {t(
-              "Same fictional cohort · by coverage at registration",
-              "Misma cohorte ficticia · cobertura de registro",
-              "同一虚构队列 · 按登记时保险分组",
+              "Same follow-up cohort · by coverage at registration",
+              "Misma cohorte de seguimiento · cobertura de registro",
+              "同一复诊队列 · 按登记时保险分组",
             )}
           </caption>
           <thead>
@@ -516,6 +744,35 @@ function Equity() {
           {t("Largest gap", "Mayor diferencia", "最大差距")} ·{" "}
           {(Math.max(...coverageRates) - Math.min(...coverageRates)).toFixed(1)}{" "}
           {t("percentage points", "puntos porcentuales", "个百分点")}
+        </p>
+      </details>
+      <details className="source">
+        <summary>
+          {t(
+            "Arrival workflow measures for this visit",
+            "Medidas del proceso de llegada",
+            "本次就诊的到院流程指标",
+          )}
+        </summary>
+        <p>
+          {t("Registration turnaround", "Tiempo de registro", "登记处理时间")} ·{" "}
+          {elapsed(s.registration.submittedAt, s.registration.verifiedAt) ??
+            t("Pending verification", "Verificación pendiente", "等待核实")}
+          {s.registration.verifiedAt ? ` ${t("minutes", "minutos", "分钟")}` : ""}
+        </p>
+        <p>
+          {t("Symptom review time", "Tiempo de revisión de síntomas", "症状审核时间")} ·{" "}
+          {elapsed(s.symptoms.submittedAt, s.symptoms.reviewedAt) ??
+            t("Pending nurse review", "Revisión pendiente", "等待护士审核")}
+          {s.symptoms.reviewedAt ? ` ${t("minutes", "minutos", "分钟")}` : ""}
+        </p>
+        <p>
+          {t("Left before being seen", "Se retiró antes de la consulta", "就诊前离开")} ·{" "}
+          {s.wait.status === "left" ? t("Yes", "Sí", "是") : t("No", "No", "否")}
+        </p>
+        <p>
+          {t("Wait-update ratings", "Valoraciones de la espera", "等候信息评分数")} ·{" "}
+          {Object.keys(s.rating).filter((x) => x.startsWith("wait-")).length}
         </p>
       </details>
       <details className="source">
@@ -567,37 +824,16 @@ function Equity() {
     </section>
   );
 }
-export function CareTeam() {
-  const { t, screen } = useCare();
-  const [tab, setTab] = useState(screen === "discharge" ? "review" : "queue");
-  return (
-    <>
-      <div className="worktabs">
-        {[
-          ["review", t("Review", "Revisión", "审核")],
-          ["queue", t("Requests", "Solicitudes", "请求队列")],
-          ["measure", t("Outcomes", "Resultados", "结果")],
-        ].map(([id, n]) => (
-          <button
-            key={id}
-            aria-pressed={tab === id}
-            className={tab === id ? "active" : ""}
-            onClick={() => setTab(id)}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-      {tab === "review" ? (
-        <Review />
-      ) : tab === "queue" ? (
-        <Queue />
-      ) : (
-        <>
-          <Verify />
-          <Equity />
-        </>
-      )}
-    </>
-  );
+export function CareTeam({ view = "intake" }) {
+  if (view === "flow") return <FlowDesk />;
+  if (view === "discharge") return <Review />;
+  if (view === "requests") return <Queue />;
+  if (view === "outcomes")
+    return (
+      <>
+        <Verify />
+        <Equity />
+      </>
+    );
+  return <IntakeDesk />;
 }
